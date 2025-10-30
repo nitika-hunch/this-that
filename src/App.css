@@ -1,0 +1,206 @@
+body, html, #root, .app-root {
+  min-height: 100vh;
+  background: #faf9fa;
+  font-family: 'Montserrat', Arial, sans-serif;
+  margin: 0;
+}
+.app-root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 2vw 1vw;
+}
+.form-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 2vw 4vw;
+  box-shadow: 0 2px 16px #0001;
+  display: flex;
+  flex-direction: column;
+  gap: 1vw;
+  margin-bottom: 2vw;
+  width: 90vw;
+  max-width: 32rem;
+}
+.form-section label {
+  font-size: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+.form-buttons {
+  display: flex;
+  gap: 1em;
+  margin-top: 0.5em;
+}
+.form-buttons button {
+  padding: 0.7em 1.6em;
+  border-radius: 6px;
+  border: none;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  background: #111;
+  color: #fff;
+  transition: background 0.15s;
+}
+.form-buttons .clear {
+  background: #aaa;
+  color: #222;
+}
+
+/* CARD PREVIEW */
+.mock-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 2px 17px #0002;
+  width: 92vw;
+  max-width: 440px;
+  margin-bottom: 2vw;
+  padding: 0.8em 0.1em 1.2em 0.1em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+}
+.mock-header {
+  width: 100%;
+  margin: 0;
+  margin-top: 0.3em;
+  text-align: center;
+}
+.mock-title {
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 800;
+  font-size: 1.17em;
+  color: #232323;
+  margin-bottom: 0.09em;
+  line-height: 1.14;
+}
+.mock-byhunch {
+  font-size: 1em;
+  color: #595959;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  margin-bottom: 0.36em;
+}
+.mock-byhunch span {
+  color: #cc2871;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.mock-question {
+  width: 100%;
+  text-align: center;
+  font-size: 1.21em;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 600;
+  color: #242424;
+  margin-top: 0.3em;
+  margin-bottom: 0.96em;
+}
+.mock-img-row {
+  width: 100%;
+  height: 42vw;
+  min-height: 135px;
+  max-height: 220px;
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  box-sizing: border-box;
+  background: none;
+}
+.mock-img-left, .mock-img-right {
+  flex: 1 1 0;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+}
+.mock-img-left {
+  border-radius: 18px 0 0 18px;
+  margin-right: 0;
+}
+.mock-img-right {
+  border-radius: 0 18px 18px 0;
+  margin-left: 0;
+}
+.mock-img-left img,
+.mock-img-right img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: inherit;
+}
+.mock-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #ece8ef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a6a6a6;
+  font-size: 1em;
+  font-weight: 500;
+  border-radius: inherit;
+}
+.img-pill-caption {
+  position: absolute;
+  left: 50%;
+  bottom: 17px;
+  transform: translateX(-50%);
+  width: 98%;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 2px 9px #0002, 0 1.6px 9px #c1469647;
+  font-size: 0.98em;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: bold;
+  padding: 0.7em 1.2em;
+  min-height: 2.45em;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  z-index: 2;
+  box-sizing: border-box;
+  line-height: 1.07;
+  margin: 0;
+  word-break: break-word;
+  white-space: normal;
+}
+.opt-pink, .opt-main-line {
+  color: #ba0865;
+  font-weight: 900;
+  font-size: 0.99em;
+  letter-spacing: 0;
+  display: block;
+  line-height: 1.07;
+  margin: 0;
+}
+.opt-black, .opt-second-line {
+  color: #222;
+  font-weight: 900;
+  font-size: 0.99em;
+  letter-spacing: 0.01em;
+  display: block;
+  margin-top: 0.13em;
+  line-height: 1.07;
+}
+@media (max-width: 420px) {
+  .img-pill-caption {
+    font-size: 0.92em;
+    padding: 0.46em 0.6em;
+  }
+}
+@media (min-width: 701px) {
+  .mock-card { width: 390px; max-width: 415px; }
+  .mock-img-row { height: 180px; min-height: 135px; max-height: 220px; }
+  .mock-title { font-size: 1.08em; }
+}
