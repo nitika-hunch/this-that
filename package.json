@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "start": "craco start",
-    "build": "craco build"
+    "build": "craco build",
+    "postinstall": "npm install --legacy-peer-deps || true"
   },
   "dependencies": {
     "html-to-image": "^1.11.13",

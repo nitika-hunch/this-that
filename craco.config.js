@@ -1,4 +1,10 @@
 module.exports = {
+  webpack: {
+    configure: (webpackConfig) => {
+      // Ensure CSS is processed correctly
+      return webpackConfig;
+    }
+  },
   devServer: {
     headers: {
       'Content-Security-Policy': "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline'; font-src * data:; img-src * data: blob:; connect-src * ws: wss:;"

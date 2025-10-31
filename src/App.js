@@ -14,6 +14,13 @@ export default function App() {
   const myImgInputRef = useRef();
   const otherImgInputRef = useRef();
 
+  // Debug: Log when component mounts
+  React.useEffect(() => {
+    console.log('App component mounted');
+    console.log('myImg state:', myImg ? 'has image' : 'no image');
+    console.log('otherImg state:', otherImg ? 'has image' : 'no image');
+  }, [myImg, otherImg]);
+
   const clearAll = () => {
     setMyImg(null);
     setOtherImg(null);
@@ -29,7 +36,18 @@ export default function App() {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => setImg(reader.result);
+      reader.onloadend = () => {
+        if (reader.result) {
+          setImg(reader.result);
+        } else {
+          console.error('Failed to read image file');
+          alert('Failed to load image. Please try again.');
+        }
+      };
+      reader.onerror = () => {
+        console.error('Error reading file:', reader.error);
+        alert('Error loading image. Please try again.');
+      };
       reader.readAsDataURL(file);
     }
   };
@@ -90,24 +108,83 @@ export default function App() {
     };
 
     try {
-      // Wait for all images to load
+      // Wait for all images to load completely
       const images = previewRef.current.querySelectorAll('img');
       await Promise.all(
         Array.from(images).map((img) => {
-          if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
+          // If image is already loaded, verify it's valid
+          if (img.complete && img.naturalHeight !== 0 && img.naturalWidth !== 0) {
+            return Promise.resolve();
+          }
+          // Wait for image to load
           return new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = resolve; // Continue even if image fails
-            setTimeout(resolve, 1000); // Timeout after 1 second
+            const timeout = setTimeout(() => {
+              console.warn('Image load timeout:', img.src.substring(0, 50));
+              resolve(); // Continue even if timeout
+            }, 3000); // Increased timeout
+            
+            img.onload = () => {
+              clearTimeout(timeout);
+              // Double-check image is actually loaded
+              if (img.complete && img.naturalHeight !== 0 && img.naturalWidth !== 0) {
+                resolve();
+              } else {
+                console.warn('Image loaded but invalid dimensions');
+                resolve(); // Continue anyway
+              }
+            };
+            img.onerror = () => {
+              clearTimeout(timeout);
+              console.error('Image failed to load:', img.src.substring(0, 50));
+              resolve(); // Continue even if image fails
+            };
           });
         })
       );
 
-      // Use html-to-image to convert to JPG
+      // Verify all images are actually loaded and have dimensions
+      const imageChecks = Array.from(images).map((img) => {
+        return new Promise((resolve) => {
+          // For base64 images, they should load immediately
+          if (img.src.startsWith('data:')) {
+            if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+              resolve(true);
+            } else {
+              // Wait a bit more for data URLs
+              setTimeout(() => {
+                resolve(img.complete && img.naturalWidth > 0 && img.naturalHeight > 0);
+              }, 200);
+            }
+          } else {
+            // For external images
+            if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+              resolve(true);
+            } else {
+              img.onload = () => resolve(true);
+              img.onerror = () => resolve(false);
+              setTimeout(() => resolve(false), 2000);
+            }
+          }
+        });
+      });
+
+      await Promise.all(imageChecks);
+      
+      // Add a small delay to ensure all rendering is complete
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // Use html-to-image to convert to JPG with options to handle images
       const dataUrl = await toJpeg(previewRef.current, {
         backgroundColor: '#ffffff',
         quality: 0.95, // JPG quality (0-1)
-        pixelRatio: 2 // High resolution
+        pixelRatio: 2, // High resolution
+        cacheBust: true, // Prevent caching issues
+        // Ensure all images are included
+        includeQueryParams: true,
+        filter: (node) => {
+          // Don't filter out any nodes - include everything
+          return true;
+        },
       });
 
       // Download as JPG
@@ -200,13 +277,37 @@ export default function App() {
           </div>
           <div className="mock-img-row">
             <div className="mock-img-left">
-              {myImg ? (<img src={myImg} alt="Left" />) : (<div className="mock-placeholder">Image 1</div>)}
+              {myImg ? (
+                <img 
+                  src={myImg} 
+                  alt="Left" 
+                  onError={(e) => {
+                    console.error('Image 1 failed to load:', myImg?.substring(0, 50));
+                    e.target.style.display = 'none';
+                  }}
+                  onLoad={() => console.log('Image 1 loaded successfully')}
+                />
+              ) : (
+                <div className="mock-placeholder">Image 1</div>
+              )}
               <div className="img-pill-caption">
                 {renderOption(option1)}
               </div>
             </div>
             <div className="mock-img-right">
-              {otherImg ? (<img src={otherImg} alt="Right" />) : (<div className="mock-placeholder">Image 2</div>)}
+              {otherImg ? (
+                <img 
+                  src={otherImg} 
+                  alt="Right" 
+                  onError={(e) => {
+                    console.error('Image 2 failed to load:', otherImg?.substring(0, 50));
+                    e.target.style.display = 'none';
+                  }}
+                  onLoad={() => console.log('Image 2 loaded successfully')}
+                />
+              ) : (
+                <div className="mock-placeholder">Image 2</div>
+              )}
               <div className="img-pill-caption">
                 {renderOption(option2)}
               </div>
