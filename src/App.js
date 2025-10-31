@@ -170,14 +170,18 @@ export default function App() {
 
       await Promise.all(imageChecks);
       
-      // Add a small delay to ensure all rendering is complete
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Detect mobile for timing adjustments
+      const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      // Add a delay to ensure all rendering is complete (longer on mobile)
+      await new Promise(resolve => setTimeout(resolve, isMobileDevice ? 500 : 200));
 
+      
       // Use html-to-image to convert to JPG with options to handle images
       const dataUrl = await toJpeg(previewRef.current, {
         backgroundColor: '#ffffff',
         quality: 0.95, // JPG quality (0-1)
-        pixelRatio: 2, // High resolution
+        pixelRatio: isMobileDevice ? 1.5 : 2, // Lower pixel ratio on mobile to avoid memory issues
         cacheBust: true, // Prevent caching issues
         // Ensure all images are included
         includeQueryParams: true,
@@ -185,15 +189,98 @@ export default function App() {
           // Don't filter out any nodes - include everything
           return true;
         },
+        // Mobile-specific options
+        style: isMobileDevice ? {
+          transform: 'scale(1)',
+          transformOrigin: 'top left'
+        } : undefined,
       });
 
-      // Download as JPG
+      // Download as JPG - handle mobile vs desktop differently
       const link = document.createElement('a');
       link.href = dataUrl;
-      link.download = 'hunch-card.jpg';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      
+      // Detect mobile devices
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // Mobile browsers have limited download support
+        if (isIOS) {
+          // iOS: Open image in new window so user can long-press to save
+          const newWindow = window.open();
+          if (newWindow) {
+            newWindow.document.write(`
+              <!DOCTYPE html>
+              <html>
+                <head>
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+                  <title>Save Image</title>
+                  <style>
+                    body {
+                      margin: 0;
+                      padding: 20px;
+                      background: #000;
+                      display: flex;
+                      justify-content: center;
+                      align-items: center;
+                      min-height: 100vh;
+                    }
+                    img {
+                      max-width: 100%;
+                      height: auto;
+                      border-radius: 12px;
+                    }
+                    .instructions {
+                      position: absolute;
+                      top: 20px;
+                      left: 20px;
+                      right: 20px;
+                      color: white;
+                      text-align: center;
+                      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+                      font-size: 14px;
+                    }
+                  </style>
+                </head>
+                <body>
+                  <div class="instructions">Long press the image to save it</div>
+                  <img src="${dataUrl}" alt="hunch-card" />
+                </body>
+              </html>
+            `);
+            newWindow.document.close();
+          } else {
+            // Fallback: show image in current window
+            alert('Please allow pop-ups, then long-press the image to save it.');
+            window.location.href = dataUrl;
+          }
+        } else {
+          // Android: Try download, fallback to opening
+          try {
+            link.download = 'hunch-card.jpg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Also provide option to view
+            setTimeout(() => {
+              if (confirm('Image download started. Would you like to view it in a new tab?')) {
+                window.open(dataUrl, '_blank');
+              }
+            }, 500);
+          } catch (e) {
+            // Fallback: open in new tab
+            window.open(dataUrl, '_blank');
+          }
+        }
+      } else {
+        // Desktop: standard download
+        link.download = 'hunch-card.jpg';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
     } catch (error) {
       originalError('Error generating image:', error);
       alert('Failed to download image: ' + (error.message || 'Unknown error'));
