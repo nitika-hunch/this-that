@@ -52,13 +52,12 @@ export default function App() {
     }
   };
 
-    // Highlight text between double quotes as pink, rest as black (remove quotes, replace closing quote with space)
-    // Handle both straight quotes (") and smart/curly quotes ("")
+    // Highlight text between underscores as pink, rest as black (remove underscores, replace closing underscore with space)
   const renderOption = (text) => {
     if (!text) return '';
     const parts = [];
-    // Match any opening quote (", ", or ") followed by content, then any closing quote (", ", or ")
-    const regex = /["""]([^"""]+)["""]/g;
+    // Match text between two underscores: _text_
+    const regex = /_([^_]+)_/g;
     let lastIndex = 0;
     let match;
     let key = 0;
@@ -66,16 +65,16 @@ export default function App() {
     
     while ((match = regex.exec(text)) !== null) {
       foundMatch = true;
-      // Add text before the opening quote
+      // Add text before the opening underscore
       if (match.index > lastIndex) {
         parts.push(<span className="opt-black" key={key++} style={{ color: '#222' }}>{text.slice(lastIndex, match.index)}</span>);
       }
-      // Add quoted content in pink (no quotes) - use inline style to ensure it works on mobile
+      // Add underscored content in pink (no underscores) - use inline style to ensure it works on mobile
       parts.push(<span className="opt-pink" key={key++} style={{ color: '#ba0865' }}>{match[1]}</span>);
       lastIndex = regex.lastIndex;
     }
     
-    // Add remaining text after the last quote (with leading space if there was a quote)
+    // Add remaining text after the last underscore (with leading space if there was a match)
     if (lastIndex < text.length) {
       const remainingText = text.slice(lastIndex);
       // If we found a match and there's remaining text, add space at start if not already present
@@ -84,7 +83,7 @@ export default function App() {
       parts.push(<span className="opt-black" key={key++} style={{ color: '#222' }}>{textToAdd}</span>);
     }
     
-    // If no quotes found, return all text as black
+    // If no underscores found, return all text as black
     if (parts.length === 0) {
       return <span className="opt-black" style={{ color: '#222' }}>{text}</span>;
     }
