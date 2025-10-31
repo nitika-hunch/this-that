@@ -189,11 +189,6 @@ export default function App() {
           // Don't filter out any nodes - include everything
           return true;
         },
-        // Mobile-specific options
-        style: isMobileDevice ? {
-          transform: 'scale(1)',
-          transformOrigin: 'top left'
-        } : undefined,
       });
 
       // Download as JPG - handle mobile vs desktop differently
@@ -210,45 +205,18 @@ export default function App() {
           // iOS: Open image in new window so user can long-press to save
           const newWindow = window.open();
           if (newWindow) {
-            newWindow.document.write(`
-              <!DOCTYPE html>
-              <html>
-                <head>
-                  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-                  <title>Save Image</title>
-                  <style>
-                    body {
-                      margin: 0;
-                      padding: 20px;
-                      background: #000;
-                      display: flex;
-                      justify-content: center;
-                      align-items: center;
-                      min-height: 100vh;
-                    }
-                    img {
-                      max-width: 100%;
-                      height: auto;
-                      border-radius: 12px;
-                    }
-                    .instructions {
-                      position: absolute;
-                      top: 20px;
-                      left: 20px;
-                      right: 20px;
-                      color: white;
-                      text-align: center;
-                      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-                      font-size: 14px;
-                    }
-                  </style>
-                </head>
-                <body>
-                  <div class="instructions">Long press the image to save it</div>
-                  <img src="${dataUrl}" alt="hunch-card" />
-                </body>
-              </html>
-            `);
+            // Build HTML string to avoid template literal issues
+            const htmlContent = '<!DOCTYPE html><html><head>' +
+              '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">' +
+              '<title>Save Image</title>' +
+              '<style>body{margin:0;padding:20px;background:#000;display:flex;justify-content:center;align-items:center;min-height:100vh}' +
+              'img{max-width:100%;height:auto;border-radius:12px}' +
+              '.instructions{position:absolute;top:20px;left:20px;right:20px;color:white;text-align:center;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px}' +
+              '</style></head><body>' +
+              '<div class="instructions">Long press the image to save it</div>' +
+              '<img src="' + dataUrl + '" alt="hunch-card" />' +
+              '</body></html>';
+            newWindow.document.write(htmlContent);
             newWindow.document.close();
           } else {
             // Fallback: show image in current window
