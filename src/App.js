@@ -34,7 +34,7 @@ export default function App() {
     }
   };
 
-  // Highlight only quoted content as pink, but remove quotes from display
+    // Highlight text between double quotes as pink, rest as black (remove quotes, replace closing quote with space)
   const renderOption = (text) => {
     if (!text) return '';
     const parts = [];
@@ -42,29 +42,35 @@ export default function App() {
     let lastIndex = 0;
     let match;
     let key = 0;
+    let foundMatch = false;
+    
     while ((match = regex.exec(text)) !== null) {
-      const preChunk = text.slice(lastIndex, match.index);
-      if (preChunk) {
-        parts.push(<span className="opt-black" key={key++}>{preChunk}</span>);
+      foundMatch = true;
+      // Add text before the opening quote
+      if (match.index > lastIndex) {
+        parts.push(<span className="opt-black" key={key++}>{text.slice(lastIndex, match.index)}</span>);
       }
-      const nextIndex = regex.lastIndex;
-      const prevChar = preChunk ? preChunk.slice(-1) : '';
-      const nextChar = nextIndex < text.length ? text.charAt(nextIndex) : '';
-      const needsLeadingSpace = prevChar && !/\s|[\-–—(/]/.test(prevChar);
-      const needsTrailingSpace = nextChar && !/\s|[.,!?:;)]/.test(nextChar);
-      const leading = needsLeadingSpace ? ' ' : '';
-      const trailing = needsTrailingSpace ? ' ' : '';
-      parts.push(
-        <span className="opt-pink" key={key++}>
-          {leading}{match[1]}{trailing}
-        </span>
-      );
+      // Add quoted content in pink (no quotes)
+      parts.push(<span className="opt-pink" key={key++}>{match[1]}</span>);
       lastIndex = regex.lastIndex;
     }
+    
+    // Add remaining text after the last quote (with leading space if there was a quote)
     if (lastIndex < text.length) {
-      parts.push(<span className="opt-black" key={key++}>{text.slice(lastIndex)}</span>);
+      const remainingText = text.slice(lastIndex);
+      // If we found a match and there's remaining text, add space at start if not already present
+      const needsLeadingSpace = foundMatch && remainingText.length > 0 && !remainingText.startsWith(' ');
+      const textToAdd = needsLeadingSpace ? ' ' + remainingText : remainingText;
+      parts.push(<span className="opt-black" key={key++}>{textToAdd}</span>);
     }
-    return <>{parts}</>;
+    
+    // If no quotes found, return all text as black
+    if (parts.length === 0) {
+      return <span className="opt-black">{text}</span>;
+    }
+    
+    // Wrap in a span to preserve inline flow (spaces between inline elements)
+    return <span>{parts}</span>;
   };
 
   const handleDownload = async () => {
