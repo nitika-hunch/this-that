@@ -175,7 +175,8 @@ body, html, #root, .app-root {
   left: 50%;
   bottom: 17px;
   transform: translateX(-50%);
-  width: 98%;
+  width: calc(100% - 8px);
+  max-width: calc(100% - 8px);
   background: #fff;
   border-radius: 18px;
   box-shadow: 0 2px 9px #0002, 0 1.6px 9px #c1469647;
@@ -195,11 +196,21 @@ body, html, #root, .app-root {
   flex-direction: row;
   justify-content: center;
   align-items: center;
+  flex-wrap: wrap;
   z-index: 2;
   box-sizing: border-box;
   margin: 0;
-  word-break: break-word;
+  word-break: normal;
   white-space: normal;
+  hyphens: none;
+  overflow-wrap: break-word;
+  /* Prevent overflow during canvas rendering */
+  overflow: hidden;
+  max-width: 100%;
+  /* Ensure text doesn't break incorrectly during canvas rendering */
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 .opt-pink, .opt-main-line {
   color: #ba0865;
@@ -308,32 +319,3 @@ body, html, #root, .app-root {
   width: 100%;
 }
 
-.download-btn {
-  width: 92vw;
-  max-width: 440px;
-  padding: 0.9em 1.6em;
-  border-radius: 8px;
-  border: none;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  background: #111;
-  color: #fff;
-  transition: background 0.15s, opacity 0.15s;
-  margin-top: 1vw;
-  font-family: 'Montserrat', Arial, sans-serif;
-}
-
-.download-btn:hover:not(:disabled) {
-  background: #333;
-}
-
-.download-btn:active:not(:disabled) {
-  background: #000;
-}
-
-.download-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: #888;
-}

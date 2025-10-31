@@ -88,7 +88,7 @@ export default function App() {
     }
     
     // Wrap in a span to preserve inline flow (spaces between inline elements)
-    return <span>{parts}</span>;
+    return <span style={{ whiteSpace: 'normal', wordBreak: 'normal', display: 'inline' }}>{parts}</span>;
   };
 
   const handleDownload = async () => {
@@ -174,21 +174,59 @@ export default function App() {
       const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       
       // Add a delay to ensure all rendering is complete (longer on mobile)
-      await new Promise(resolve => setTimeout(resolve, isMobileDevice ? 500 : 200));
+      await new Promise(resolve => setTimeout(resolve, isMobileDevice ? 1000 : 200));
 
+      // Get the element to capture
+      const element = previewRef.current;
+      
+      // On mobile, use pixelRatio of 1 to match exact rendering (avoid scaling issues)
+      // Desktop can use higher pixelRatio for better quality
+      const pixelRatio = isMobileDevice ? 1 : 2;
+      
+      // Wait for fonts to load before capture to ensure text renders correctly
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+        await new Promise(resolve => setTimeout(resolve, 200)); // Additional delay after fonts load
+      }
+      
+      // Fix text container widths to prevent canvas rendering differences
+      // Canvas measures text slightly differently, so we ensure containers have explicit widths
+      const textContainers = element.querySelectorAll('.img-pill-caption');
+      textContainers.forEach(container => {
+        const rect = container.getBoundingClientRect();
+        // Ensure width is explicitly set to match actual rendered width
+        if (rect.width > 0) {
+          container.style.width = rect.width + 'px';
+        }
+        // Also fix the inner text wrapper
+        const textWrapper = container.querySelector('span');
+        if (textWrapper) {
+          const textRect = textWrapper.getBoundingClientRect();
+          if (textRect.width > 0) {
+            // Don't set width on wrapper, let it flow naturally but ensure parent has fixed width
+          }
+        }
+      });
+      
+      // Small delay to let style changes apply
+      await new Promise(resolve => setTimeout(resolve, 50));
       
       // Use html-to-image to convert to JPG with options to handle images
-      const dataUrl = await toJpeg(previewRef.current, {
+      const dataUrl = await toJpeg(element, {
         backgroundColor: '#ffffff',
-        quality: 0.95, // JPG quality (0-1)
-        pixelRatio: isMobileDevice ? 1.5 : 2, // Lower pixel ratio on mobile to avoid memory issues
-        cacheBust: true, // Prevent caching issues
-        // Ensure all images are included
+        quality: 0.95,
+        pixelRatio: pixelRatio,
+        cacheBust: true,
         includeQueryParams: true,
         filter: (node) => {
           // Don't filter out any nodes - include everything
           return true;
         },
+      });
+      
+      // Restore original widths after capture
+      textContainers.forEach(container => {
+        container.style.width = '';
       });
 
       // Download as JPG - handle mobile vs desktop differently
@@ -390,14 +428,6 @@ export default function App() {
             </div>
           </div>
         </div>
-        <button 
-          type="button" 
-          className="download-btn"
-          onClick={handleDownload}
-          disabled={!readyToDownload}
-        >
-          Download Image
-        </button>
       </div>
     </div>
   );
