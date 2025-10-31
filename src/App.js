@@ -10,6 +10,9 @@ export default function App() {
   const [option1, setOption1] = useState('');
   const [option2, setOption2] = useState('');
   const previewRef = useRef();
+  // Refs for accessible file input triggers
+  const myImgInputRef = useRef();
+  const otherImgInputRef = useRef();
 
   const clearAll = () => {
     setMyImg(null);
@@ -18,6 +21,8 @@ export default function App() {
     setQuestion('');
     setOption1('');
     setOption2('');
+    if (myImgInputRef.current) myImgInputRef.current.value = '';
+    if (otherImgInputRef.current) otherImgInputRef.current.value = '';
   };
 
   const handleImg = (e, setImg) => {
@@ -38,10 +43,22 @@ export default function App() {
     let match;
     let key = 0;
     while ((match = regex.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push(<span className="opt-black" key={key++}>{text.slice(lastIndex, match.index)}</span>);
+      const preChunk = text.slice(lastIndex, match.index);
+      if (preChunk) {
+        parts.push(<span className="opt-black" key={key++}>{preChunk}</span>);
       }
-      parts.push(<span className="opt-pink" key={key++}>{match[1]}</span>);
+      const nextIndex = regex.lastIndex;
+      const prevChar = preChunk ? preChunk.slice(-1) : '';
+      const nextChar = nextIndex < text.length ? text.charAt(nextIndex) : '';
+      const needsLeadingSpace = prevChar && !/\s|[\-–—(/]/.test(prevChar);
+      const needsTrailingSpace = nextChar && !/\s|[.,!?:;)]/.test(nextChar);
+      const leading = needsLeadingSpace ? ' ' : '';
+      const trailing = needsTrailingSpace ? ' ' : '';
+      parts.push(
+        <span className="opt-pink" key={key++}>
+          {leading}{match[1]}{trailing}
+        </span>
+      );
       lastIndex = regex.lastIndex;
     }
     if (lastIndex < text.length) {
@@ -52,11 +69,42 @@ export default function App() {
 
   const handleDownload = async () => {
     if (!previewRef.current) return;
-    const canvas = await html2canvas(previewRef.current, {backgroundColor: null, useCORS: true, scrollY: -window.scrollY});
-    const url = canvas.toDataURL('image/png');
+
+    const rect = previewRef.current.getBoundingClientRect();
+    const captureScale = 2; // crisper capture for high-res output
+    const baseCanvas = await html2canvas(previewRef.current, {
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      scrollY: -window.scrollY,
+      scale: captureScale,
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+      windowWidth: window.innerWidth,
+      windowHeight: window.innerHeight
+    });
+
+    // Target 7:5 at high resolution - since card is already 7:5, direct scale
+    const targetWidth = 1400; // 7x
+    const targetHeight = 1000; // 5x
+    const out = document.createElement('canvas');
+    out.width = targetWidth;
+    out.height = targetHeight;
+    const ctx = out.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    // Fill background (white)
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, targetWidth, targetHeight);
+
+    // Since source card is already 7:5 (same as target), scale proportionally to fill
+    // Both have same aspect ratio, so uniform scaling will fill perfectly
+    ctx.drawImage(baseCanvas, 0, 0, baseCanvas.width, baseCanvas.height, 0, 0, targetWidth, targetHeight);
+
+    const url = out.toDataURL('image/png');
     const link = document.createElement('a');
     link.href = url;
-    link.download = `you-and-${otherName}.png`;
+    link.download = 'hunch-card.png';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -67,12 +115,59 @@ export default function App() {
   return (
     <div className="app-root">
       <div className="form-section">
-        <label>My Image <input type="file" accept="image/*" onChange={e => handleImg(e, setMyImg)} /></label>
-        <label>Other User's Image <input type="file" accept="image/*" onChange={e => handleImg(e, setOtherImg)} /></label>
-        <label>Other User Name <input type="text" value={otherName} onChange={e => setOtherName(e.target.value)} /></label>
-        <label>Question <input type="text" value={question} onChange={e => setQuestion(e.target.value)} /></label>
-        <label>Option 1 <input type="text" value={option1} onChange={e => setOption1(e.target.value)} /></label>
-        <label>Option 2 <input type="text" value={option2} onChange={e => setOption2(e.target.value)} /></label>
+        <div className="input-group">
+          <label htmlFor="myImgInput">My Image</label>
+          <input
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            id="myImgInput"
+            ref={myImgInputRef}
+            onChange={e => handleImg(e, setMyImg)}
+            aria-label="Select your image"
+          />
+          <button
+            type="button"
+            className="img-upload-btn"
+            onClick={() => myImgInputRef.current && myImgInputRef.current.click()}
+            aria-label="Select your image"
+          >
+            Select Image
+          </button>
+        </div>
+        <div className="input-group">
+          <label htmlFor="otherImgInput">Other User's Image</label>
+          <input
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            id="otherImgInput"
+            ref={otherImgInputRef}
+            onChange={e => handleImg(e, setOtherImg)}
+            aria-label="Select other user's image"
+          />
+          <button
+            type="button"
+            className="img-upload-btn"
+            onClick={() => otherImgInputRef.current && otherImgInputRef.current.click()}
+            aria-label="Select other user's image"
+          >
+            Select Image
+          </button>
+        </div>
+
+        <label htmlFor="othernameinput">Other User Name
+          <input id="othernameinput" type="text" value={otherName} onChange={e => setOtherName(e.target.value)} autoComplete="name" inputMode="text" placeholder="e.g., Dan" />
+        </label>
+        <label htmlFor="questioninput">Question
+          <input id="questioninput" type="text" value={question} onChange={e => setQuestion(e.target.value)} autoComplete="off" inputMode="text" placeholder="Type your question" />
+        </label>
+        <label htmlFor="option1input">Option 1
+          <input id="option1input" type="text" value={option1} onChange={e => setOption1(e.target.value)} autoComplete="off" inputMode="text" placeholder="Option 1" />
+        </label>
+        <label htmlFor="option2input">Option 2
+          <input id="option2input" type="text" value={option2} onChange={e => setOption2(e.target.value)} autoComplete="off" inputMode="text" placeholder="Option 2" />
+        </label>
         <div className="form-buttons">
           <button onClick={readyToDownload ? handleDownload : undefined} disabled={!readyToDownload}>Download Image</button>
           <button type="button" className="clear" onClick={clearAll}>Clear</button>
@@ -81,11 +176,12 @@ export default function App() {
       <div className="preview-section">
         <div className="mock-card" ref={previewRef}>
           <div className="mock-header">
-            <div className="mock-title">You &amp; {otherName || '_____'}</div>
-            <div className="mock-byhunch">by <span>hunch</span></div>
+            <img src={process.env.PUBLIC_URL + '/hunch-logo.png'} alt="hunch" className="brand-hunch-logo" />
           </div>
-          <div className="mock-question">
-            {question || <span style={{opacity:0.4}}>Your question?</span>}
+          <div className="mock-question-container">
+            <div className="mock-question">
+              {question || <span style={{opacity:0.4}}>Your question?</span>}
+            </div>
           </div>
           <div className="mock-img-row">
             <div className="mock-img-left">
