@@ -202,27 +202,48 @@ export default function App() {
       if (isMobile) {
         // Mobile browsers have limited download support
         if (isIOS) {
-          // iOS: Open image in new window so user can long-press to save
-          const newWindow = window.open();
-          if (newWindow) {
-            // Build HTML string to avoid template literal issues
-            const htmlContent = '<!DOCTYPE html><html><head>' +
-              '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">' +
-              '<title>Save Image</title>' +
-              '<style>body{margin:0;padding:20px;background:#000;display:flex;justify-content:center;align-items:center;min-height:100vh}' +
-              'img{max-width:100%;height:auto;border-radius:12px}' +
-              '.instructions{position:absolute;top:20px;left:20px;right:20px;color:white;text-align:center;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px}' +
-              '</style></head><body>' +
-              '<div class="instructions">Long press the image to save it</div>' +
-              '<img src="' + dataUrl + '" alt="hunch-card" />' +
-              '</body></html>';
-            newWindow.document.write(htmlContent);
-            newWindow.document.close();
-          } else {
-            // Fallback: show image in current window
-            alert('Please allow pop-ups, then long-press the image to save it.');
-            window.location.href = dataUrl;
-          }
+          // iOS: Display image in current page with instructions
+          // Create a modal/overlay to show the image
+          const overlay = document.createElement('div');
+          overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;';
+          
+          const instructions = document.createElement('div');
+          instructions.style.cssText = 'color:white;text-align:center;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:16px;margin-bottom:20px;font-weight:600;';
+          instructions.textContent = 'Tap and hold the image, then tap "Save to Photos"';
+          
+          const img = document.createElement('img');
+          img.src = dataUrl;
+          img.alt = 'hunch-card';
+          img.style.cssText = 'max-width:100%;height:auto;border-radius:12px;';
+          
+          const closeBtn = document.createElement('button');
+          closeBtn.textContent = 'Close';
+          closeBtn.style.cssText = 'margin-top:20px;padding:10px 20px;background:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;';
+          closeBtn.onclick = () => document.body.removeChild(overlay);
+          
+          overlay.appendChild(instructions);
+          overlay.appendChild(img);
+          overlay.appendChild(closeBtn);
+          document.body.appendChild(overlay);
+          
+          // Also try to open in new tab as backup
+          setTimeout(() => {
+            const newWindow = window.open();
+            if (newWindow) {
+              const htmlContent = '<!DOCTYPE html><html><head>' +
+                '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">' +
+                '<title>Save Image</title>' +
+                '<style>body{margin:0;padding:20px;background:#000;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:100vh}' +
+                'img{max-width:100%;height:auto;border-radius:12px}' +
+                '.instructions{color:white;text-align:center;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:16px;margin-bottom:20px;font-weight:600}' +
+                '</style></head><body>' +
+                '<div class="instructions">Tap and hold the image, then tap "Save to Photos"</div>' +
+                '<img src="' + dataUrl + '" alt="hunch-card" />' +
+                '</body></html>';
+              newWindow.document.write(htmlContent);
+              newWindow.document.close();
+            }
+          }, 100);
         } else {
           // Android: Try download, fallback to opening
           try {
