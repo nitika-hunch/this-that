@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import html2canvas from 'html2canvas';
+import { toJpeg } from 'html-to-image';
 import './App.css';
 
 export default function App() {
@@ -70,47 +70,41 @@ export default function App() {
   const handleDownload = async () => {
     if (!previewRef.current) return;
 
-    const rect = previewRef.current.getBoundingClientRect();
-    const captureScale = 2; // crisper capture for high-res output
-    const baseCanvas = await html2canvas(previewRef.current, {
-      backgroundColor: '#ffffff',
-      useCORS: true,
-      scrollY: -window.scrollY,
-      scale: captureScale,
-      width: Math.round(rect.width),
-      height: Math.round(rect.height),
-      windowWidth: window.innerWidth,
-      windowHeight: window.innerHeight
-    });
+    try {
+      // Wait for all images to load
+      const images = previewRef.current.querySelectorAll('img');
+      await Promise.all(
+        Array.from(images).map((img) => {
+          if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
+          return new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = resolve; // Continue even if image fails
+            setTimeout(resolve, 1000); // Timeout after 1 second
+          });
+        })
+      );
 
-    // Target 7:5 at high resolution - since card is already 7:5, direct scale
-    const targetWidth = 1400; // 7x
-    const targetHeight = 1000; // 5x
-    const out = document.createElement('canvas');
-    out.width = targetWidth;
-    out.height = targetHeight;
-    const ctx = out.getContext('2d');
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
+      // Use html-to-image to convert to JPG
+      const dataUrl = await toJpeg(previewRef.current, {
+        backgroundColor: '#ffffff',
+        quality: 0.95, // JPG quality (0-1)
+        pixelRatio: 2 // High resolution
+      });
 
-    // Fill background (white)
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, targetWidth, targetHeight);
-
-    // Since source card is already 7:5 (same as target), scale proportionally to fill
-    // Both have same aspect ratio, so uniform scaling will fill perfectly
-    ctx.drawImage(baseCanvas, 0, 0, baseCanvas.width, baseCanvas.height, 0, 0, targetWidth, targetHeight);
-
-    const url = out.toDataURL('image/png');
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'hunch-card.png';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      // Download as JPG
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = 'hunch-card.jpg';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error generating image:', error);
+      alert('Failed to download image: ' + (error.message || 'Unknown error'));
+    }
   };
 
-  const readyToDownload = myImg && otherImg && otherName && question && option1 && option2;
+  const readyToDownload = myImg && otherImg && question && option1 && option2;
 
   return (
     <div className="app-root">
@@ -169,7 +163,6 @@ export default function App() {
           <input id="option2input" type="text" value={option2} onChange={e => setOption2(e.target.value)} autoComplete="off" inputMode="text" placeholder="Option 2" />
         </label>
         <div className="form-buttons">
-          <button onClick={readyToDownload ? handleDownload : undefined} disabled={!readyToDownload}>Download Image</button>
           <button type="button" className="clear" onClick={clearAll}>Clear</button>
         </div>
       </div>
@@ -198,6 +191,14 @@ export default function App() {
             </div>
           </div>
         </div>
+        <button 
+          type="button" 
+          className="download-btn"
+          onClick={handleDownload}
+          disabled={!readyToDownload}
+        >
+          Download Image
+        </button>
       </div>
     </div>
   );
