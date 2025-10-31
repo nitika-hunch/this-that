@@ -45,8 +45,8 @@ export default function App() {
         }
       };
       reader.onerror = () => {
-        console.error('Error reading file:', reader.error);
-        alert('Error loading image. Please try again.');
+        console.error('Error reading file: ', reader.error);
+        alert('Error loading image. Please try again. ');
       };
       reader.readAsDataURL(file);
     }
