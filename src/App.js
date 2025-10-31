@@ -76,6 +76,19 @@ export default function App() {
   const handleDownload = async () => {
     if (!previewRef.current) return;
 
+    // Suppress CSS SecurityError warnings from html-to-image (cross-origin stylesheet access)
+    const originalError = console.error;
+    const suppressedErrors = [];
+    console.error = (...args) => {
+      const errorMsg = args.join(' ');
+      // Only suppress SecurityError related to CSS rules (common with Google Fonts)
+      if (errorMsg.includes('SecurityError') && errorMsg.includes('cssRules')) {
+        suppressedErrors.push(args);
+        return; // Suppress this error
+      }
+      originalError.apply(console, args); // Log other errors normally
+    };
+
     try {
       // Wait for all images to load
       const images = previewRef.current.querySelectorAll('img');
@@ -105,8 +118,11 @@ export default function App() {
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      console.error('Error generating image:', error);
+      originalError('Error generating image:', error);
       alert('Failed to download image: ' + (error.message || 'Unknown error'));
+    } finally {
+      // Restore original console.error
+      console.error = originalError;
     }
   };
 
@@ -175,7 +191,7 @@ export default function App() {
       <div className="preview-section">
         <div className="mock-card" ref={previewRef}>
           <div className="mock-header">
-            <img src={process.env.PUBLIC_URL + '/hunch-logo.png'} alt="hunch" className="brand-hunch-logo" />
+            <img src="/hunch-logo.png" alt="hunch" className="brand-hunch-logo" />
           </div>
           <div className="mock-question-container">
             <div className="mock-question">
