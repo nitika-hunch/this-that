@@ -213,13 +213,15 @@ body, html, #root, .app-root {
   -moz-osx-font-smoothing: grayscale;
 }
 .opt-pink, .opt-main-line {
-  color: #ba0865;
+  color: #ba0865 !important;
   font-weight: inherit; /* use 600 */
   font-size: inherit;
   letter-spacing: inherit;
-  display: inline;
+  display: inline !important;
   line-height: inherit;
   margin: 0;
+  /* Ensure color works on mobile */
+  -webkit-text-fill-color: #ba0865;
 }
 .opt-black, .opt-second-line {
   color: #222;

@@ -53,10 +53,12 @@ export default function App() {
   };
 
     // Highlight text between double quotes as pink, rest as black (remove quotes, replace closing quote with space)
+    // Handle both straight quotes (") and smart/curly quotes ("")
   const renderOption = (text) => {
     if (!text) return '';
     const parts = [];
-    const regex = /"([^"]+)"/g;
+    // Match any opening quote (", ", or ") followed by content, then any closing quote (", ", or ")
+    const regex = /["""]([^"""]+)["""]/g;
     let lastIndex = 0;
     let match;
     let key = 0;
@@ -66,10 +68,10 @@ export default function App() {
       foundMatch = true;
       // Add text before the opening quote
       if (match.index > lastIndex) {
-        parts.push(<span className="opt-black" key={key++}>{text.slice(lastIndex, match.index)}</span>);
+        parts.push(<span className="opt-black" key={key++} style={{ color: '#222' }}>{text.slice(lastIndex, match.index)}</span>);
       }
-      // Add quoted content in pink (no quotes)
-      parts.push(<span className="opt-pink" key={key++}>{match[1]}</span>);
+      // Add quoted content in pink (no quotes) - use inline style to ensure it works on mobile
+      parts.push(<span className="opt-pink" key={key++} style={{ color: '#ba0865' }}>{match[1]}</span>);
       lastIndex = regex.lastIndex;
     }
     
@@ -79,12 +81,12 @@ export default function App() {
       // If we found a match and there's remaining text, add space at start if not already present
       const needsLeadingSpace = foundMatch && remainingText.length > 0 && !remainingText.startsWith(' ');
       const textToAdd = needsLeadingSpace ? ' ' + remainingText : remainingText;
-      parts.push(<span className="opt-black" key={key++}>{textToAdd}</span>);
+      parts.push(<span className="opt-black" key={key++} style={{ color: '#222' }}>{textToAdd}</span>);
     }
     
     // If no quotes found, return all text as black
     if (parts.length === 0) {
-      return <span className="opt-black">{text}</span>;
+      return <span className="opt-black" style={{ color: '#222' }}>{text}</span>;
     }
     
     // Wrap in a span to preserve inline flow (spaces between inline elements)
